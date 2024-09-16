@@ -362,6 +362,7 @@ io.on('connection', (socket) => {
           ChatLog.message = data.message;
           Chatlog.color = data.color ?  data.color : '';
           ChatLog.replyTo = data.reply ? data.reply.text : '';
+          ChatLog.image = data.image ? data.image : '';
           ChatLog.timestamp = Date.now();
 
           if(data.role)
