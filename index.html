@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      body {background-color: #333; }
+      #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
+      #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 0.2rem; margin: 0.25rem; background-color: #aaa;}
+      #input:focus { outline: none; }
+      #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
+
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages > li { padding: 0.5rem 1rem; }
+      #messages > li:nth-child(odd) { background: #efefef; }
+      .banned-message {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        width:100%;
+      }
+    </style>
+  </head>
+  <body>
+    <ul id="messages"></ul>
+    <form id="form" action="">
+      <input id="input" autocomplete="off" /><button id="sendButton">Send</button>
+    </form>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+  var socket = io();
+  let messages = document.getElementById('messages');
+  let form = document.getElementById('form');
+  let input = document.getElementById('input');
+  let sendButton = document.getElementById('sendButton');
+
+  let ID = "";
+  let username = getParameterByName('user') ? getParameterByName('user') : 'Guest';
+  let room = window.location.pathname.replace('/chat/','');
+
+  socket.emit("join", {
+    username : username, 
+    roomname : room
+  });
+  
+  socket.on('send data', (data) => {
+    ID = data.id; //ID will be used later
+  });
+
+  socket.on('message', (data) => {
+    appendMessage(data, `<span class="handle">${data.user}</span> ${data.message}`);
+  });
+
+  socket.on('history', (data) => {
+    data.history.forEach((element) => {
+      appendMessage(element, `<span class="handle">${element.user}</span> ${element.message}`);
+    })
+  });
+
+  socket.on('deleted', (data) => {
+    deleteMessage(data.msgId);
+  });
+
+  socket.on("MEMO", (data) => {
+    if( data.type == 'timeout' ){
+      document.querySelectorAll('[data-messenger="'+data.user+'"]')
+        .forEach((c,i,a) => { c.lastChild.innerHTML = '<div class="message notice">message deleted</div>'; })
+    }
+    if( data.type == 'ban' ){
+      showBannedState();
+    }
+    appendMessage(data, `<span class="notice">${data.message}</span>`);
+  });
+
+  socket.on("TIMEOUT", (data) => {
+  	socket.emit("TIMEDOUT", data);
+  });
+
+  socket.on("NOTICE", (data) => {
+    console.log(data);
+    if( data.type == 'timeout' ){
+      document.querySelectorAll(`[data-messenger="${data.username}"]`)
+        .forEach((c,i,a) => { c.lastChild.innerHTML = '<div class="message notice">message deleted</div>'; })
+    }
+    if( data.type == 'ban' ){
+      showBannedState();
+    }
+    appendMessage(data, `<div class="message notice">${data.message}</div>`);
+  });
+
+
+  socket.on("count", (count) => {
+  	console.log(count);
+  	document.getElementById('count').innerText  = count;
+  });
+
+  form.addEventListener('keyup', function(e) {
+    e.preventDefault();
+    if (input.value && (e.keyCode == 13)) {
+      sendMessage();
+    }
+  });
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (input.value) {
+      sendMessage();
+    }
+  });
+
+
+  function sendMessage(){
+    socket.emit('message', {
+      username : username, 
+      roomname : room, 
+      message: input.value,
+      color: "#ff0000",
+      image: 'https://placehold.it/80x80',
+      reply : false,
+      user_id : 999
+    });
+    input.value = '';
+  }
+
+  function appendMessage(data, html){
+    var item = document.createElement('div');
+    item.setAttribute('class', 'message');
+    item.setAttribute('data-messenger', data.user);
+    item.setAttribute('data-id', data.msgId);
+    item.innerHTML = html;
+    messages.appendChild(item);
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+
+  function deleteMessage(msgId){
+    document.querySelector('[data-id="'+msgId+'"]').innerHTML='<em>This message was deleted by a moderator.</em>';
+  }
+
+  function showBannedState(){
+    input.remove();
+    sendButton.remove();
+    messages.remove();
+    form.style.height = '100%';
+    form.innerHTML = '<div class="banned-message"><h4>You are banned from chatting in this community.</h4></div>';
+  }
+
+  // This is just for testing
+  function getParameterByName(name, url = window.location.href) {
+      name = name.replace(/[\[\]]/g, '\\$&');
+      var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+          results = regex.exec(url);
+      if (!results) return null;
+      if (!results[2]) return '';
+      return decodeURIComponent(results[2].replace(/\+/g, ' '));
+  }
+    </script>
+  </body>
+</html>
