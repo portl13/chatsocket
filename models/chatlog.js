@@ -7,7 +7,7 @@ var ChatlogSchema = new mongoose.Schema({
   user: {
     type: 'string',
     description: 'The username of the person sending the message'
-  },
+  },  
   user_id:{
     type: 'string',
     description: 'the user id of the person sending the message'
@@ -31,6 +31,10 @@ var ChatlogSchema = new mongoose.Schema({
   timestamp: {
     type: 'number',
     description: 'the unix timestamp of the message'
+  },
+  image: {
+    type: 'string',
+    description: 'The avatar image of the person chatting'
   },
   color: String
 },{
