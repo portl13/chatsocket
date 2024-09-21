@@ -28,7 +28,7 @@ app.use(sessionMiddleware);
 /////////////////////////
 var mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
-mongoose.connect( process.env.dbUri, { 
+mongoose.connect( "mongodb+srv://wesharechatbot:pIcsItSg0AYOKkTC@portl-socket.genrpqq.mongodb.net/portl-socket", { 
     useUnifiedTopology: true, 
     useNewUrlParser: true 
 }).catch(function(err) {
@@ -51,19 +51,20 @@ function emitHistory(socket_id, roomname){
   // Get the last messages up to 40.
   // emit those into the chat
   Chatlog.find({room: roomname, deleted: { $ne: true }})
-  .sort({ _id: 1 }) 
-  .limit(40)
+  .sort({ _id: -1 }) 
+  .limit(100)
+  .lean()
   .exec((err, messages) => {
 
     if( err ) return;
 
     if( messages ){
+      msg = messages.reverse();
       
-      let _messages = messages.map(message => {
-        let msgObject = message.toObject(); // Convert to plain JS object
-        msgObject.msgId = msgObject._id;
-        delete msgObject._id; // Remove the _id field
-        return msgObject;
+      let _messages = msg.map(message => {
+        message.msgId = message._id;
+        delete message._id; // Eliminar el campo _id
+        return message;
       });
 
       io.to(socket_id).emit("history", {
