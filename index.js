@@ -35,7 +35,7 @@ mongoose.connect( "mongodb+srv://wesharechatbot:pIcsItSg0AYOKkTC@portl-socket.ge
     console.log(err)
 });
 //mongoose.set('useCreateIndex', true);
-mongoose.set('strictQuery', true);
+mongoose.set('strictQuery', false);
 
 
 app.get('/', (req, res) => {
